@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Kodów BBR - Cloud</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .status-indicator.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-indicator.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected .status-dot {
+            background: #28a745;
+        }
+
+        .status-indicator.disconnected .status-dot {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        select, input[type="date"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+            background: white;
+        }
+
+        select:focus, input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .generated-code {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 25px 0;
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+            word-break: break-all;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .generated-code.empty {
+            background: #e0e0e0;
+            color: #999;
+            font-size: 16px;
+            font-weight: normal;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .history-section {
+            margin-top: 40px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .history-header h2 {
+            color: #333;
+            font-size: 20px;
+        }
+
+        .refresh-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-table thead {
+            background: #f8f9fa;
+        }
+
+        .history-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .history-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .code-cell {
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+            color: #667eea;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔢 Generator Kodów BBR - Cloud</h1>
+        <p class="subtitle">Synchronizacja w czasie rzeczywistym przez Google Sheets</p>
+
+        <div id="statusIndicator" class="status-indicator disconnected">
+            <div class="status-dot"></div>
+            <span>Sprawdzanie połączenia...</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Wygenerowanych kodów</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="nextId">000001</div>
+                <div class="stat-label">Następny ID</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-group">
+                <label for="model">Model produktu:</label>
+                <select id="model">
+                    <option value="">-- Wybierz model --</option>
+                    <option value="ES400B">ES400B</option>
+                    <option value="ES400C">ES400C</option>
+                    <option value="O2/O3">O2/O3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Data wysłania ankiety:</label>
+                <input type="date" id="date">
+            </div>
+
+            <div class="generated-code empty" id="generatedCode">
+                Wygenerowany kod pojawi się tutaj
+            </div>
+
+            <button id="generateBtn" onclick="generateCode()">🚀 Generuj Kod</button>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">
+                <h2>📋 Historia (wszyscy użytkownicy)</h2>
+                <button class="refresh-btn" onclick="loadHistory()">🔄 Odśwież</button>
+            </div>
+            <div id="historyContainer">
+                <div class="no-data">Ładowanie...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ WKLEJ URL SWOJEGO GOOGLE APPS SCRIPT TUTAJ:
+        const SCRIPT_URL = 'https://script.google.com/a/macros/ridedott.com/s/AKfycbw7Yl-cyuuRTjRFA0OwZE9lYQy8vu0cvTXb4ehsCabA1SNGXe5JD7SpkaG6gixWLPftVA/exec';
+
+        let isConnected = false;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            await checkConnection();
+            if (isConnected) {
+                await loadHistory();
+                await updateStats();
+                setInterval(async () => {
+                    await loadHistory();
+                    await updateStats();
+                }, 30000);
+            }
+        });
+
+        async function checkConnection() {
+            const statusEl = document.getElementById('statusIndicator');
+            const btnEl = document.getElementById('generateBtn');
+            
+            if (SCRIPT_URL === 'WKLEJ_TUTAJ_URL') {
+                statusEl.className = 'status-indicator disconnected';
+                statusEl.innerHTML = '<div class="status-dot"></div><span>❌ Skonfiguruj URL (zobacz SETUP.md)</span>';
+                btnEl.disabled = true;
+                return;
+            }
+
+            try {
+                const response = await fetch(SCRIPT_URL + '?action=ping');
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    statusEl.className = 'status-indicator connected';
+                    statusEl.innerHTML = '<div class="status-dot"></div><span>✅ Połączono z Google Sheets</span>';
+                    btnEl.disabled = false;
+                    isConnected = true;
+                }
+            } catch (error) {
+                statusEl.className = 'status-indicator disconnected';
+                statusEl.innerHTML = '<div class="status-dot"></div><span>❌ Błąd połączenia</span>';
+                btnEl.disabled = true;
+            }
+        }
+
+        async function generateCode() {
+            if (!isConnected) {
+                alert('Brak połączenia z Google Sheets!');
+                return;
+            }
+
+            const model = document.getElementById('model').value;
+            const dateInput = document.getElementById('date').value;
+
+            if (!model || !dateInput) {
+                alert('Wypełnij wszystkie pola!');
+                return;
+            }
+
+            const date = new Date(dateInput);
+            const formattedDate = String(date.getDate()).padStart(2, '0') + 
+                                 String(date.getMonth() + 1).padStart(2, '0') + 
+                                 date.getFullYear();
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Generowanie...';
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'text/plain'},
+                    body: JSON.stringify({
+                        action: 'generateCode',
+                        model: model,
+                        date: formattedDate
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    const codeEl = document.getElementById('generatedCode');
+                    codeEl.textContent = result.code;
+                    codeEl.classList.remove('empty');
+                    
+                    await loadHistory();
+                    await updateStats();
+                } else {
+                    alert('Błąd: ' + (result.error || 'Nieznany błąd'));
+                }
+            } catch (error) {
+                alert('Błąd połączenia: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Generuj Kod';
+            }
+        }
+
+        async function loadHistory() {
+            if (!isConnected) return;
+
+            try {
+                const response = await fetch(SCRIPT_URL + '?action=getHistory');
+                const data = await response.json();
+                const history = data.history || [];
+
+                const container = document.getElementById('historyContainer');
+
+                if (history.length === 0) {
+                    container.innerHTML = '<div class="no-data">Brak danych</div>';
+                    return;
+                }
+
+                let html = '<table class="history-table"><thead><tr>' +
+                          '<th>Kod</th><th>Model</th><th>Data</th><th>ID</th><th>Wygenerowano</th>' +
+                          '</tr></thead><tbody>';
+
+                history.forEach(entry => {
+                    const timestamp = new Date(entry.timestamp).toLocaleString('pl-PL');
+                    html += `<tr>
+                        <td class="code-cell">${entry.code}</td>
+                        <td>${entry.model}</td>
+                        <td>${entry.date}</td>
+                        <td>${entry.id}</td>
+                        <td>${timestamp}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Błąd:', error);
+            }
+        }
+
+        async function updateStats() {
+            if (!isConnected) return;
+
+            try {
+                const response = await fetch(SCRIPT_URL + '?action=getStats');
+                const data = await response.json();
+
+                document.getElementById('totalCount').textContent = data.totalCount || 0;
+                document.getElementById('nextId').textContent = data.nextId || '000001';
+            } catch (error) {
+                console.error('Błąd:', error);
+            }
+        }
+    </script>
+</body>
+</html>
