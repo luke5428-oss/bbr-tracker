@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generator Kodów BBR - Cloud</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -262,6 +263,33 @@
             font-size: 14px;
             opacity: 0.9;
         }
+
+        /* Style dla drukowania */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #qrCodeContainer, #qrCodeContainer * {
+                visibility: visible;
+            }
+            #qrCodeContainer {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            #qrCodeContainer button {
+                display: none !important;
+            }
+            #qrCodeContainer select {
+                display: none !important;
+            }
+            #qrCodeContainer label {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -305,6 +333,27 @@
                 Wygenerowany kod pojawi się tutaj
             </div>
 
+            <div id="qrCodeContainer" style="display: none; text-align: center; margin: 20px 0; padding: 20px; background: white; border-radius: 8px; border: 2px solid #e0e0e0;">
+                <p style="margin-bottom: 10px; color: #666; font-size: 14px; font-weight: 500;">Kod QR do wydruku:</p>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 13px; color: #666; margin-right: 10px;">Rozmiar dla drukarki:</label>
+                    <select id="qrSize" onchange="updateQRSize()" style="padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        <option value="200" selected>200x200 px (Brother/Dymo - 203 DPI)</option>
+                        <option value="300">300x300 px (Standardowe - 300 DPI)</option>
+                        <option value="400">400x400 px (Wysokiej jakości)</option>
+                        <option value="600">600x600 px (Premium - 600 DPI)</option>
+                    </select>
+                </div>
+                
+                <div id="qrcode"></div>
+                
+                <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="printQR()" style="width: auto; padding: 10px 20px; background: #667eea;">🖨️ Drukuj</button>
+                    <button onclick="downloadQR()" style="width: auto; padding: 10px 20px; background: #28a745;">Pobierz PNG</button>
+                </div>
+            </div>
+
             <button id="generateBtn" onclick="generateCode()">Generuj Kod</button>
         </div>
 
@@ -338,24 +387,6 @@
             }
         });
 
-        // Załaduj i wyświetl ostatni wygenerowany kod
-        async function loadLastGeneratedCode() {
-            try {
-                const response = await fetch(SCRIPT_URL + '?action=getHistory');
-                const data = await response.json();
-                const history = data.history || [];
-                
-                if (history.length > 0) {
-                    const lastCode = history[0].code;
-                    const codeEl = document.getElementById('generatedCode');
-                    codeEl.textContent = lastCode;
-                    codeEl.classList.remove('empty');
-                }
-            } catch (error) {
-                console.error('Błąd ładowania ostatniego kodu:', error);
-            }
-        }
-
         async function checkConnection() {
             const statusEl = document.getElementById('statusIndicator');
             const btnEl = document.getElementById('generateBtn');
@@ -374,6 +405,30 @@
                 statusEl.className = 'status-indicator disconnected';
                 statusEl.innerHTML = '<div class="status-dot"></div><span>Błąd połączenia</span>';
                 btnEl.disabled = true;
+                isConnected = false;
+            }
+        }
+
+        // Załaduj i wyświetl ostatni wygenerowany kod
+        async function loadLastGeneratedCode() {
+            if (!isConnected) return;
+            
+            try {
+                const response = await fetch(SCRIPT_URL + '?action=getHistory');
+                const data = await response.json();
+                const history = data.history || [];
+                
+                if (history.length > 0) {
+                    const lastCode = history[0].code;
+                    const codeEl = document.getElementById('generatedCode');
+                    codeEl.textContent = lastCode;
+                    codeEl.classList.remove('empty');
+                    
+                    // Generuj QR kod dla ostatniego kodu
+                    generateQRCode(lastCode);
+                }
+            } catch (error) {
+                console.error('Błąd ładowania ostatniego kodu:', error);
             }
         }
 
@@ -417,6 +472,9 @@
                     const codeEl = document.getElementById('generatedCode');
                     codeEl.textContent = result.code;
                     codeEl.classList.remove('empty');
+                    
+                    // Generuj QR kod
+                    generateQRCode(result.code);
                     
                     await loadHistory();
                     await updateStats();
@@ -480,6 +538,71 @@
             } catch (error) {
                 console.error('Błąd:', error);
             }
+        }
+
+        // Generuj QR kod
+        function generateQRCode(text) {
+            const container = document.getElementById('qrCodeContainer');
+            const canvas = document.getElementById('qrcode');
+            const size = parseInt(document.getElementById('qrSize').value) || 300;
+            
+            // Wyczyść poprzedni QR kod
+            canvas.innerHTML = '';
+            
+            // Zapisz aktualny kod do ponownego użycia
+            window.currentQRCode = text;
+            
+            // Wygeneruj nowy QR kod
+            const qr = new QRCode(canvas, {
+                text: text,
+                width: size,
+                height: size,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // Pokaż kontener z QR kodem
+            container.style.display = 'block';
+        }
+
+        // Zaktualizuj rozmiar QR kodu
+        function updateQRSize() {
+            if (window.currentQRCode) {
+                generateQRCode(window.currentQRCode);
+            }
+        }
+
+        // Pobierz QR kod jako PNG
+        function downloadQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                alert('Najpierw wygeneruj kod!');
+                return;
+            }
+            
+            // Konwertuj canvas do PNG
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                const code = document.getElementById('generatedCode').textContent;
+                link.download = `QR_${code.replace(/\//g, '_')}.png`;
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Drukuj QR kod
+        function printQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                alert('Najpierw wygeneruj kod!');
+                return;
+            }
+            
+            // Otwórz okno drukowania
+            window.print();
         }
     </script>
 </body>
