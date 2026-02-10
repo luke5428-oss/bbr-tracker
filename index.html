@@ -330,12 +330,31 @@
             if (isConnected) {
                 await loadHistory();
                 await updateStats();
+                await loadLastGeneratedCode(); // Pokaż ostatni wygenerowany kod
                 setInterval(async () => {
                     await loadHistory();
                     await updateStats();
                 }, 30000);
             }
         });
+
+        // Załaduj i wyświetl ostatni wygenerowany kod
+        async function loadLastGeneratedCode() {
+            try {
+                const response = await fetch(SCRIPT_URL + '?action=getHistory');
+                const data = await response.json();
+                const history = data.history || [];
+                
+                if (history.length > 0) {
+                    const lastCode = history[0].code;
+                    const codeEl = document.getElementById('generatedCode');
+                    codeEl.textContent = lastCode;
+                    codeEl.classList.remove('empty');
+                }
+            } catch (error) {
+                console.error('Błąd ładowania ostatniego kodu:', error);
+            }
+        }
 
         async function checkConnection() {
             const statusEl = document.getElementById('statusIndicator');
