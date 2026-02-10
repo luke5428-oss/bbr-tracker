@@ -266,7 +266,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔢 Generator Kodów BBR - Cloud</h1>
+        <h1>Generator Kodów BBR - Cloud</h1>
         <p class="subtitle">Synchronizacja w czasie rzeczywistym przez Google Sheets</p>
 
         <div id="statusIndicator" class="status-indicator disconnected">
@@ -280,7 +280,7 @@
                 <div class="stat-label">Wygenerowanych kodów</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="nextId">000001</div>
+                <div class="stat-number" id="nextId">1BBR00000000</div>
                 <div class="stat-label">Następny ID</div>
             </div>
         </div>
@@ -305,13 +305,13 @@
                 Wygenerowany kod pojawi się tutaj
             </div>
 
-            <button id="generateBtn" onclick="generateCode()">🚀 Generuj Kod</button>
+            <button id="generateBtn" onclick="generateCode()">Generuj Kod</button>
         </div>
 
         <div class="history-section">
             <div class="history-header">
-                <h2>📋 Historia (wszyscy użytkownicy)</h2>
-                <button class="refresh-btn" onclick="loadHistory()">🔄 Odśwież</button>
+                <h2>Historia (wszyscy użytkownicy)</h2>
+                <button class="refresh-btn" onclick="loadHistory()">Odśwież</button>
             </div>
             <div id="historyContainer">
                 <div class="no-data">Ładowanie...</div>
@@ -320,7 +320,6 @@
     </div>
 
     <script>
-        // ⚠️ WKLEJ URL SWOJEGO GOOGLE APPS SCRIPT TUTAJ:
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEtoq38vSNMjey5fGKGSKmB5vkMfbpjoMDEW7WO6kK2RFyX_x1z6LwiaaB9TvHy-eyUg/exec';
 
         let isConnected = false;
@@ -342,26 +341,19 @@
             const statusEl = document.getElementById('statusIndicator');
             const btnEl = document.getElementById('generateBtn');
             
-            if (SCRIPT_URL === 'WKLEJ_TUTAJ_URL') {
-                statusEl.className = 'status-indicator disconnected';
-                statusEl.innerHTML = '<div class="status-dot"></div><span>❌ Skonfiguruj URL (zobacz SETUP.md)</span>';
-                btnEl.disabled = true;
-                return;
-            }
-
             try {
                 const response = await fetch(SCRIPT_URL + '?action=ping');
                 const data = await response.json();
                 
                 if (data.status === 'ok') {
                     statusEl.className = 'status-indicator connected';
-                    statusEl.innerHTML = '<div class="status-dot"></div><span>✅ Połączono z Google Sheets</span>';
+                    statusEl.innerHTML = '<div class="status-dot"></div><span>Połączono z Google Sheets</span>';
                     btnEl.disabled = false;
                     isConnected = true;
                 }
             } catch (error) {
                 statusEl.className = 'status-indicator disconnected';
-                statusEl.innerHTML = '<div class="status-dot"></div><span>❌ Błąd połączenia</span>';
+                statusEl.innerHTML = '<div class="status-dot"></div><span>Błąd połączenia</span>';
                 btnEl.disabled = true;
             }
         }
@@ -387,7 +379,7 @@
 
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
-            btn.textContent = '⏳ Generowanie...';
+            btn.textContent = 'Generowanie...';
 
             try {
                 const response = await fetch(SCRIPT_URL, {
@@ -416,7 +408,7 @@
                 alert('Błąd połączenia: ' + error.message);
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🚀 Generuj Kod';
+                btn.textContent = 'Generuj Kod';
             }
         }
 
@@ -465,7 +457,7 @@
                 const data = await response.json();
 
                 document.getElementById('totalCount').textContent = data.totalCount || 0;
-                document.getElementById('nextId').textContent = data.nextId || '000001';
+                document.getElementById('nextId').textContent = data.nextId || '1BBR00000000';
             } catch (error) {
                 console.error('Błąd:', error);
             }
